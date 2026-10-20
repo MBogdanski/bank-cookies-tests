@@ -29,4 +29,4 @@ If you see a false “missing dependencies” warning after install on Linux, se
 
 ## GitHub Actions
 
-[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): matrix **chromium** + **firefox**, `./scripts/ci-install-browser.sh <browser>` (no WebKit; chromium uses `--only-shell` for headless CI).
+[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): matrix **chromium**, **firefox**, **webkit** via `./scripts/ci-install-browser.sh` (WebKit: extra `apt` e.g. `libgtk-4-1`, then `install-deps` + `install`).

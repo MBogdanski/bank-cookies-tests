@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-browser="${1:?usage: ci-install-browser.sh chromium|firefox}"
-if [[ "${browser}" != "chromium" && "${browser}" != "firefox" ]]; then
+browser="${1:?usage: ci-install-browser.sh chromium|firefox|webkit}"
+if [[ "${browser}" != "chromium" && "${browser}" != "firefox" && "${browser}" != "webkit" ]]; then
   echo "Unsupported browser for CI: ${browser}" >&2
   exit 1
 fi
@@ -11,7 +11,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 chmod +x mvnw
 
-# First Playwright CLI / driver unpack must not pull all browsers (incl. WebKit).
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 playwright_cli() {
@@ -20,6 +19,9 @@ playwright_cli() {
 }
 
 remove_webkit_cache() {
+  if [[ "${browser}" == "webkit" ]]; then
+    return
+  fi
   rm -rf "${HOME}/.cache/ms-playwright/webkit-"* 2>/dev/null || true
 }
 
@@ -28,6 +30,12 @@ echo "=== compile test sources ==="
 
 echo "=== CI Playwright setup: ${browser} only ==="
 remove_webkit_cache
+
+if [[ "${browser}" == "webkit" ]]; then
+  echo "=== apt (extra host libraries for WebKit) ==="
+  sudo apt-get update -qq
+  sudo apt-get install -y libgtk-4-1
+fi
 
 echo "=== apt (install-deps ${browser}) ==="
 sudo apt-get update -qq
@@ -48,8 +56,8 @@ remove_webkit_cache
 
 echo "=== cache contents ==="
 ls -la "${HOME}/.cache/ms-playwright/" 2>/dev/null || true
-if compgen -G "${HOME}/.cache/ms-playwright/webkit-*" > /dev/null 2>&1; then
-  echo "ERROR: WebKit cache appeared; refusing to continue." >&2
+if [[ "${browser}" != "webkit" ]] && compgen -G "${HOME}/.cache/ms-playwright/webkit-*" > /dev/null 2>&1; then
+  echo "ERROR: WebKit cache appeared while installing ${browser}; refusing to continue." >&2
   exit 1
 fi
 
