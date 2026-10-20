@@ -15,6 +15,9 @@ jobs:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      PLAYWRIGHT_DRIVER_DIR: /ms-playwright-driver
     steps:
       - uses: actions/checkout@v4
 
@@ -27,11 +30,8 @@ jobs:
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
 
-      - name: Install Playwright browsers
-        run: |
-          set -euxo pipefail
-          echo "Playwright install (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install ${{ matrix.browser }}"
+      - name: Build and resolve dependencies
+        run: ./mvnw -B install -DskipTests --no-transfer-progress
 
       - name: Run cookie consent tests
         run: |
@@ -46,6 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: reports-${{ matrix.browser }}
+          if-no-files-found: ignore
           path: |
             target/surefire-reports/
             target/screenshots/
