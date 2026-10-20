@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <junit.version>5.11.4</junit.version>
-        <playwright.version>1.49.0</playwright.version>
+        <playwright.version>1.63.0</playwright.version>
         <browser>chromium</browser>
         <headed>false</headed>
     </properties>

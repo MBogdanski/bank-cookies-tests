@@ -8,6 +8,9 @@ jobs:
   cookie-consent:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright/java:v1.63.0-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -21,25 +24,8 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ms-playwright-${{ matrix.browser }}-${{ hashFiles('pom.xml') }}
-          restore-keys: |
-            ms-playwright-${{ matrix.browser }}-
-
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
-
-      - name: Compile tests
-        run: ./mvnw -B -DskipTests compile test-compile
-
-      - name: Install Playwright OS dependencies
-        run: |
-          set -euxo pipefail
-          echo "Playwright install-deps (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps ${{ matrix.browser }}"
 
       - name: Install Playwright browsers
         run: |
@@ -47,7 +33,7 @@ jobs:
           echo "Playwright install (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install ${{ matrix.browser }}"
 
-      - name: Run cookie consent test
+      - name: Run cookie consent tests
         run: |
           set -euxo pipefail
           echo "Surefire (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"

@@ -47,9 +47,9 @@ Run a single test class or method:
 
 Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) runs on every **push** and **pull request**.
 
-- **Runner:** `ubuntu-latest`
+- **Runner:** `ubuntu-latest` with container `mcr.microsoft.com/playwright/java:v1.63.0-noble` (browser OS libraries preinstalled; matches Playwright version in `pom.xml`)
 - **JDK:** 21 (Temurin), Maven dependency cache enabled
 - **Matrix:** `chromium`, `firefox`, `webkit` in parallel (`fail-fast: false`)
-- **Steps:** checkout → compile test sources → Playwright `install-deps <browser>` (OS libraries; CLI uses `sudo` for `apt` on Ubuntu) → `install <browser>` → `./mvnw -B test -Dbrowser=<matrix browser>`
-- **Timeouts / cache:** job timeout 25 minutes; Maven cache via `setup-java`; Playwright browser cache under `~/.cache/ms-playwright`
+- **Steps:** checkout → Playwright CLI `install <browser>` → `./mvnw -B test -Dbrowser=<matrix browser>`
+- **Timeout:** 25 minutes per job
 - **On failure:** uploads Surefire reports (`target/surefire-reports/`) and screenshots (`target/screenshots/`) as artifacts named `reports-<browser>`
