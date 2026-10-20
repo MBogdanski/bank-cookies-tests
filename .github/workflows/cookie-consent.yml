@@ -24,9 +24,6 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Make Maven Wrapper executable
-        run: chmod +x mvnw
-
       - name: Install Playwright system libraries
         run: |
           sudo apt-get update -qq
@@ -52,16 +49,16 @@ jobs:
             libx264-164
 
       - name: Build
-        run: ./mvnw -B install -DskipTests --no-transfer-progress
+        run: mvn -B install -DskipTests --no-transfer-progress
 
       - name: Ensure browsers are installed
         run: |
           set -euxo pipefail
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
+          mvn -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
             -Dexec.args="install --with-deps"
 
       - name: Run tests
-        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+        run: mvn -B test -Dbrowser=${{ matrix.browser }}
 
       - name: Upload reports on failure
         if: failure()

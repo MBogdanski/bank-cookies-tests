@@ -3,30 +3,31 @@
 ## Requirements
 
 - JDK 21
-- Maven Wrapper (`./mvnw`)
+- Maven 3.9+
 
 ## Running tests
 
-First time per browser — OS libs + browser binary ([Playwright Java](https://playwright.dev/java/docs/browsers)):
+First run — build and install Playwright browsers ([ci-intro](https://playwright.dev/java/docs/ci-intro)):
 
 ```bash
-chmod +x mvnw
-./mvnw -B install -DskipTests --no-transfer-progress
-./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps chromium"
-./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install chromium"
+mvn -B install -DskipTests --no-transfer-progress
+mvn -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps"
 ```
-
-Repeat `install-deps` / `install` for `firefox` (and `webkit` if needed). Do **not** run bare `install` or `install --with-deps` without a browser name — that pulls **all** browsers.
 
 Run tests:
 
 ```bash
-./mvnw test
-./mvnw test -Dbrowser=firefox
+mvn test
+mvn test -Dbrowser=firefox
+mvn test -Dbrowser=webkit
 ```
 
-If you see a false “missing dependencies” warning after install on Linux, see [playwright#30592](https://github.com/microsoft/playwright/issues/30592). CI sets `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true` when deps were installed via `install-deps`.
+Single test:
+
+```bash
+mvn test -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
+```
 
 ## GitHub Actions
 
-[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): jak [Playwright ci-intro](https://playwright.dev/java/docs/ci-intro) — `install --with-deps` (wszystkie browsery), testy w matrix **chromium** / **firefox** / **webkit** z `-Dbrowser=…`.
+[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): `ubuntu-latest`, `mvn`, `install --with-deps`, matrix **chromium** / **firefox** / **webkit** with `-Dbrowser=…`.
