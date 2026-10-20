@@ -29,4 +29,4 @@ If you see a false “missing dependencies” warning after install on Linux, se
 
 ## GitHub Actions
 
-[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): matrix **chromium**, **firefox**, **webkit** via `./scripts/ci-install-browser.sh` (WebKit: extra `apt` e.g. `libgtk-4-1`, then `install-deps` + `install`).
+[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): `ubuntu-latest`, matrix **chromium** / **firefox** / **webkit**, system libraries via `apt`, then Playwright `install-deps` + `install`, `./mvnw test`.
