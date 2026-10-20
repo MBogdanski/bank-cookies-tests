@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+env:
+  DEBIAN_FRONTEND: noninteractive
+
 jobs:
   cookie-consent:
     runs-on: ubuntu-latest
@@ -21,14 +24,10 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Make Maven Wrapper executable
-        run: chmod +x mvnw
-
       - name: Install Playwright (${{ matrix.browser }})
-        run: |
-          set -euxo pipefail
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
-            -Dexec.args="install --with-deps ${{ matrix.browser }}"
+        run: bash ./scripts/playwright-install.sh ${{ matrix.browser }}
+        env:
+          CI: "true"
 
       - name: Run tests
         run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
