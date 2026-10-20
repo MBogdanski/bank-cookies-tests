@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.LoadState;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,8 +55,34 @@ public abstract class BrowserFixture {
         context = browser.newContext(new Browser.NewContextOptions()
                 .setLocale("pl-PL")
                 .setViewportSize(1280, 720));
+        if (isCi()) {
+            context.route("**/*", route -> {
+                String url = route.request().url();
+                if (url.contains("hcaptcha.com")
+                        || url.contains("hcaptcha.net")
+                        || url.contains("google-analytics.com")
+                        || url.contains("googletagmanager.com")
+                        || url.contains("doubleclick.net")) {
+                    route.abort();
+                } else {
+                    route.resume();
+                }
+            });
+        }
         page = context.newPage();
+        page.setDefaultNavigationTimeout(45_000);
         page.setDefaultTimeout(30_000);
+    }
+
+    protected void openIngHome() {
+        page.navigate("https://www.ing.pl/");
+        if (isCi()) {
+            page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+        }
+    }
+
+    private static boolean isCi() {
+        return "true".equalsIgnoreCase(System.getenv("CI"));
     }
 
     @AfterEach

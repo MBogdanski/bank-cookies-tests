@@ -11,8 +11,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 chmod +x mvnw
 
+# First Playwright CLI / driver unpack must not pull all browsers (incl. WebKit).
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
 playwright_cli() {
-  # Pass subcommand + args as one exec.args string (Playwright CLI parses it).
   ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
     -Dexec.args="$*"
 }
@@ -20,6 +22,9 @@ playwright_cli() {
 remove_webkit_cache() {
   rm -rf "${HOME}/.cache/ms-playwright/webkit-"* 2>/dev/null || true
 }
+
+echo "=== compile test sources ==="
+./mvnw -B -DskipTests compile test-compile --no-transfer-progress
 
 echo "=== CI Playwright setup: ${browser} only ==="
 remove_webkit_cache
@@ -31,11 +36,13 @@ playwright_cli "install-deps ${browser}"
 remove_webkit_cache
 
 echo "=== browser binary (install ${browser}) ==="
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 if [[ "${browser}" == "chromium" ]]; then
   playwright_cli "install chromium --only-shell"
 else
   playwright_cli "install ${browser}"
 fi
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 remove_webkit_cache
 

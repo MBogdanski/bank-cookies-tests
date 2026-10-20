@@ -145,10 +145,6 @@ class CookieConsentTest extends BrowserFixture {
                 "https://www.ing.pl/ should include CMP cookiePolicyGDPR=1 (.ing.pl)");
     }
 
-    private void openIngHome() {
-        page.navigate("https://www.ing.pl/");
-    }
-
     private static final String WWW_ING_PL = "www.ing.pl";
 
     private void seedGdprCookies(String policyValue) {

@@ -7,6 +7,7 @@ on:
 env:
   DEBIAN_FRONTEND: noninteractive
   PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: "true"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
 jobs:
   test:
@@ -30,13 +31,11 @@ jobs:
         run: bash ./scripts/ci-install-browser.sh ${{ matrix.browser }}
 
       - name: Run tests
-        timeout-minutes: 10
+        timeout-minutes: 12
         run: |
           set -euxo pipefail
           chmod +x mvnw
           ./mvnw -B test -Dbrowser=${{ matrix.browser }}
-        env:
-          DEBUG: pw:browser
 
       - name: Upload reports on failure
         if: failure()
