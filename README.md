@@ -7,42 +7,26 @@
 
 ## Running tests
 
-First time only — install browsers and OS libraries ([Playwright Java CI](https://playwright.dev/java/docs/ci-intro)):
+First time per browser — OS libs + browser binary ([Playwright Java](https://playwright.dev/java/docs/browsers)):
 
 ```bash
 chmod +x mvnw
 ./mvnw -B install -DskipTests --no-transfer-progress
-./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps chromium"
+./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps chromium"
+./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install chromium"
 ```
 
-For all three browsers locally, repeat with `firefox` and `webkit`, or:
-
-```bash
-for b in chromium firefox webkit; do
-  ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps $b"
-done
-```
+Repeat `install-deps` / `install` for `firefox` (and `webkit` if needed). Do **not** run bare `install` or `install --with-deps` without a browser name — that pulls **all** browsers.
 
 Run tests:
 
 ```bash
 ./mvnw test
 ./mvnw test -Dbrowser=firefox
-./mvnw test -Dbrowser=webkit
 ```
 
-Single test:
-
-```bash
-./mvnw test -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
-```
+If you see a false “missing dependencies” warning after install on Linux, see [playwright#30592](https://github.com/microsoft/playwright/issues/30592). CI sets `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true` when deps were installed via `install-deps`.
 
 ## GitHub Actions
 
-[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) on `ubuntu-latest`:
-
-1. `install -DskipTests`
-2. `install-deps` + `install` per matrix browser
-3. `mvn test -Dbrowser=…`
-
-Matrix: **chromium**, **firefox** in parallel (WebKit temporarily disabled in CI).
+[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml): `ubuntu-latest`, matrix **chromium** + **firefox** (WebKit off for now), `install-deps` + `install` per job only.
