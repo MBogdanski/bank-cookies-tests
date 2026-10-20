@@ -10,14 +10,10 @@ jobs:
     timeout-minutes: 25
     container:
       image: mcr.microsoft.com/playwright/java:v1.63.0-noble
-      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-      PLAYWRIGHT_DRIVER_DIR: /ms-playwright-driver
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +33,8 @@ jobs:
         run: |
           set -euxo pipefail
           echo "Surefire (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+          ls -la /ms-playwright || true
+          ./mvnw -B -Pci test -Dbrowser=${{ matrix.browser }}
         env:
           BROWSER: ${{ matrix.browser }}
 
