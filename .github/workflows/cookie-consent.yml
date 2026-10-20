@@ -6,8 +6,6 @@ on:
 
 env:
   DEBIAN_FRONTEND: noninteractive
-  # Playwright may warn/fail host validation even when install-deps succeeded (lib version mismatch).
-  # See https://github.com/microsoft/playwright/issues/30592
   PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: "true"
 
 jobs:
@@ -27,25 +25,18 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Make Maven Wrapper executable
-        run: chmod +x mvnw
-
-      - name: Build
-        run: ./mvnw -B install -DskipTests --no-transfer-progress
-
       - name: Install Playwright (${{ matrix.browser }} only)
-        run: |
-          set -euxo pipefail
-          sudo apt-get update -qq
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
-            -Dexec.args="install-deps ${PLAYWRIGHT_BROWSER}"
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
-            -Dexec.args="install ${PLAYWRIGHT_BROWSER}"
-        env:
-          PLAYWRIGHT_BROWSER: ${{ matrix.browser }}
+        timeout-minutes: 10
+        run: bash ./scripts/ci-install-browser.sh ${{ matrix.browser }}
 
       - name: Run tests
-        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+        timeout-minutes: 10
+        run: |
+          set -euxo pipefail
+          chmod +x mvnw
+          ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+        env:
+          DEBUG: pw:browser
 
       - name: Upload reports on failure
         if: failure()
