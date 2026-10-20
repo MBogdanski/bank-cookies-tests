@@ -2,54 +2,48 @@
 
 ## Requirements
 
-- JDK 21
-- Maven Wrapper (`./mvnw`) — a global Maven install is optional
+- [Docker](https://docs.docker.com/get-docker/) with Compose (`docker compose`)
 
-## Playwright browsers
+Tests run inside the official Playwright Java image (`v1.63.0-noble`, aligned with `pom.xml`). No local JDK or browser install is required.
 
-Run once before the first local test run:
+**First run:** Docker downloads the image once (~2 GB, browsers + OS libs). That can take several minutes; later runs reuse the local cache and start much faster.
+
+Optional prefetch:
 
 ```bash
-./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps"
+docker pull mcr.microsoft.com/playwright/java:v1.63.0-noble
 ```
-
-On macOS/Linux, installing a single browser is often enough, e.g. `install chromium`.
 
 ## Running tests
 
 Default: Chromium, headless.
 
 ```bash
-./mvnw test
+./scripts/docker-test.sh
 ```
 
 Other browsers:
 
 ```bash
-./mvnw test -Dbrowser=firefox
-./mvnw test -Dbrowser=webkit
+./scripts/docker-test.sh firefox
+./scripts/docker-test.sh webkit
 ```
 
-Headed mode (debug):
+Single test class or method:
 
 ```bash
-./mvnw test -Dheaded=true
+./scripts/docker-test.sh chromium -Dtest=CookieConsentTest
+./scripts/docker-test.sh chromium -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
 ```
 
-Run a single test class or method:
-
-```bash
-./mvnw test -Dtest=CookieConsentTest
-./mvnw test -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
-```
+Maven dependencies are cached in the Docker volume `maven-repo` between runs.
 
 ## GitHub Actions
 
 Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) runs on every **push** and **pull request**.
 
-- **Runner:** `ubuntu-latest` with container `mcr.microsoft.com/playwright/java:v1.63.0-noble` (browser OS libraries preinstalled; matches Playwright version in `pom.xml`)
-- **JDK:** 21 (Temurin), Maven dependency cache enabled
+- **Runner:** `ubuntu-latest` (host Docker, not a nested job container)
+- **Command:** same as locally — `./scripts/docker-test.sh <browser>`
 - **Matrix:** `chromium`, `firefox`, `webkit` in parallel (`fail-fast: false`)
-- **Steps:** checkout → `./mvnw -B install -DskipTests` → `./mvnw -B test -Dbrowser=<matrix browser>` (browsers and OS libs come from the container; `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`)
 - **Timeout:** 25 minutes per job
-- **On failure:** uploads Surefire reports (`target/surefire-reports/`) and screenshots (`target/screenshots/`) as artifacts named `reports-<browser>`
+- **On failure:** uploads Surefire reports and screenshots as `reports-<browser>`

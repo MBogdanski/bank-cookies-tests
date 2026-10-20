@@ -65,25 +65,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>ci</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <environmentVariables>
-                                <PLAYWRIGHT_BROWSERS_PATH>/ms-playwright</PLAYWRIGHT_BROWSERS_PATH>
-                                <PLAYWRIGHT_DRIVER_DIR>/ms-playwright-driver</PLAYWRIGHT_DRIVER_DIR>
-                                <PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>1</PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>
-                            </environmentVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
