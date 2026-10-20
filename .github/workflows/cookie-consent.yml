@@ -4,23 +4,49 @@ on:
   push:
   pull_request:
 
+env:
+  DEBIAN_FRONTEND: noninteractive
+
 jobs:
-  cookie-consent:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run tests in Docker (chromium, firefox, webkit)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build
+        run: ./mvnw -B install -DskipTests --no-transfer-progress
+
+      - name: Install Playwright (${{ matrix.browser }})
         run: |
           set -euxo pipefail
-          bash ./scripts/docker-test-all.sh
+          sudo apt-get update -qq
+          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
+            -Dexec.args="install-deps ${{ matrix.browser }}"
+          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
+            -Dexec.args="install ${{ matrix.browser }}"
+
+      - name: Run tests
+        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
 
       - name: Upload reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: reports
+          name: reports-${{ matrix.browser }}
           if-no-files-found: ignore
           path: |
             target/surefire-reports/

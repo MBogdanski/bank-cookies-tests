@@ -2,42 +2,47 @@
 
 ## Requirements
 
-- [Docker](https://docs.docker.com/get-docker/)
-- Maven Wrapper runs inside the container — no local JDK or Playwright install
-
-Tests use `mcr.microsoft.com/playwright/java:v1.63.0-noble` (matches Playwright in `pom.xml`).
-
-**First run:** Docker pulls the image once (~2 GB). That can take several minutes; later runs reuse the local cache.
+- JDK 21
+- Maven Wrapper (`./mvnw`)
 
 ## Running tests
 
-All three browsers (same as CI):
+First time only — install browsers and OS libraries ([Playwright Java CI](https://playwright.dev/java/docs/ci-intro)):
 
 ```bash
-./scripts/docker-test-all.sh
+chmod +x mvnw
+./mvnw -B install -DskipTests --no-transfer-progress
+./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps chromium"
 ```
 
-Single browser:
+For all three browsers locally, repeat with `firefox` and `webkit`, or:
 
 ```bash
-./scripts/docker-test.sh
-./scripts/docker-test.sh firefox
-./scripts/docker-test.sh webkit
+for b in chromium firefox webkit; do
+  ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps $b"
+done
+```
+
+Run tests:
+
+```bash
+./mvnw test
+./mvnw test -Dbrowser=firefox
+./mvnw test -Dbrowser=webkit
 ```
 
 Single test:
 
 ```bash
-./scripts/docker-test.sh chromium -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
+./mvnw test -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
 ```
-
-Maven dependencies are cached in the Docker volume `bank-cookies-tests-maven-repo`.
 
 ## GitHub Actions
 
-Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) runs on every **push** and **pull request**.
+[`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) on `ubuntu-latest`:
 
-- **Runner:** `ubuntu-latest` + host Docker
-- **Command:** `./scripts/docker-test-all.sh` — one image pull, then chromium → firefox → webkit
-- **Timeout:** 35 minutes (first run on a cold runner includes ~2 GB image pull)
-- **On failure:** Surefire reports and screenshots as artifact `reports`
+1. `install -DskipTests`
+2. `install-deps` + `install` per matrix browser
+3. `mvn test -Dbrowser=…`
+
+Matrix: **chromium**, **firefox** in parallel (WebKit temporarily disabled in CI).
