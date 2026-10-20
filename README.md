@@ -1,6 +1,6 @@
 # bank-cookies-tests
 
-Test rekrutacyjny E2E: scenariusz zgody na **cookies analityczne** na [ing.pl](https://www.ing.pl) (Java 21, JUnit 5, Playwright).
+Testy E2E zgód cookies na [ing.pl](https://www.ing.pl) (Java 21, JUnit 5, Playwright) — cztery warianty wartości `cookiePolicyGDPR` (1–4).
 
 Repozytorium: [github.com/MBogdanski/bank-cookies-tests](https://github.com/MBogdanski/bank-cookies-tests)
 
@@ -40,18 +40,21 @@ Podgląd okna przeglądarki (debug):
 ./mvnw test -Dheaded=true
 ```
 
-## Scenariusz
+## Scenariusze
 
-1. Wejście na `https://www.ing.pl/` w czystym kontekście (bez zapisanych cookies).
-2. **Dostosuj** → włączenie **Cookies analityczne**, wyłączenie **Cookies marketingowe**.
-3. **Zaakceptuj zaznaczone**.
-4. Asercje:
-   - obecność `cookiePolicyGDPR` i `cookiePolicyGDPR__details`
-   - wartość `cookiePolicyGDPR=3` (techniczne + analityczne, bez marketingu)
-   - po przeładowaniu strony — co najmniej jedno z: `_ga`, `_ga_*`, `_gid`
-   - brak typowych cookies marketingowych (`_fbp`, `IDE`, `_gcl_*`)
+Każdy test startuje w czystym kontekście na `https://www.ing.pl/` (poza testem nadpisania cookies) i po akcji w banerze sprawdza `cookiePolicyGDPR` oraz `cookiePolicyGDPR__details`. Cookies techniczne są zawsze aktywne w banerze.
 
-Implementacja: Page Object [`CookieConsentPage`](src/test/java/pl/ing/cookies/pages/CookieConsentPage.java), test [`CookieConsentAnalyticsTest`](src/test/java/pl/ing/cookies/CookieConsentAnalyticsTest.java).
+| Test | Akcja w banerze | Oczekiwane `cookiePolicyGDPR` |
+|------|-----------------|-------------------------------|
+| Odrzuć wszystkie | **Odrzuć wszystkie** | `1` |
+| Tylko marketingowe | **Dostosuj** → marketing ON → **Zaakceptuj zaznaczone** | `2` |
+| Tylko analityczne | **Dostosuj** → analityczne ON, marketing OFF → **Zaakceptuj zaznaczone** | `3` |
+| Wszystkie | **Zaakceptuj wszystkie** | `4` |
+| Obejście UI (techniczne) | **Dostosuj** → manipulacja DOM switcha technicznego → **Zaakceptuj zaznaczone** | `1` |
+| Nadpisanie cookies | `addCookies` z `cookiePolicyGDPR=4` → **Odrzuć wszystkie** | `1` na `.ing.pl` |
+| Trwałość po reload | **Odrzuć wszystkie** → `page.reload()` | te same wartości `cookiePolicyGDPR` i `cookiePolicyGDPR__details` |
+
+Implementacja: [`CookieConsentModal`](src/test/java/pl/ing/cookies/pages/CookieConsentModal.java), [`CookieConsentTest`](src/test/java/pl/ing/cookies/CookieConsentTest.java).
 
 ## CI (GitHub Actions)
 

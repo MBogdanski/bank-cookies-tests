@@ -85,7 +85,6 @@ public abstract class BrowserFixture {
             String name = extensionContext.getDisplayName().replaceAll("[^a-zA-Z0-9_-]", "_");
             page.screenshot(new Page.ScreenshotOptions().setPath(dir.resolve(name + ".png")));
         } catch (Exception ignored) {
-            // best-effort artifact for CI
         }
     }
 
