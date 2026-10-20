@@ -5,16 +5,29 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE="mcr.microsoft.com/playwright/java:v1.63.0-noble"
 MAVEN_VOLUME="bank-cookies-tests-maven-repo"
 
+# Required when running Playwright inside Docker (incl. GitHub Actions docker run).
+DOCKER_RUN=(docker run --rm --init --ipc=host)
+
 ensure_image() {
   if [[ "${SKIP_DOCKER_PULL:-0}" == 1 ]]; then
     return
   fi
   if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
-    echo "Pulling ${IMAGE} (one-time, ~2 GB — often 5–15 min)..."
-    docker pull "${IMAGE}"
+    echo "[$(date -u +%H:%M:%S)] Pulling ${IMAGE} (~2 GB, often 5–15 min on first run)..."
+    docker pull --progress=plain "${IMAGE}"
   else
-    echo "Using cached image ${IMAGE}"
+    echo "[$(date -u +%H:%M:%S)] Using cached image ${IMAGE}"
   fi
+}
+
+run_in_container() {
+  "${DOCKER_RUN[@]}" \
+    --volume "${ROOT}:/work" \
+    --volume "${MAVEN_VOLUME}:/root/.m2" \
+    --workdir /work \
+    --env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    "${IMAGE}" \
+    "$@"
 }
 
 browser="chromium"
@@ -25,10 +38,4 @@ fi
 
 ensure_image
 
-docker run --rm \
-  --volume "${ROOT}:/work" \
-  --volume "${MAVEN_VOLUME}:/root/.m2" \
-  --workdir /work \
-  --env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-  "${IMAGE}" \
-  bash /work/scripts/docker-test-inner.sh test "-Dbrowser=${browser}" "$@"
+run_in_container bash /work/scripts/docker-test-inner.sh test "-Dbrowser=${browser}" "$@"

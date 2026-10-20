@@ -39,5 +39,5 @@ Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-conse
 
 - **Runner:** `ubuntu-latest` + host Docker
 - **Command:** `./scripts/docker-test-all.sh` — one image pull, then chromium → firefox → webkit
-- **Timeout:** 30 minutes
+- **Timeout:** 35 minutes (first run on a cold runner includes ~2 GB image pull)
 - **On failure:** Surefire reports and screenshots as artifact `reports`
