@@ -26,8 +26,11 @@ jobs:
       - name: Compile tests
         run: ./mvnw -B -DskipTests compile test-compile
 
+      - name: Install Playwright OS dependencies
+        run: sudo ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
+
       - name: Install Playwright browsers
-        run: ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps ${{ matrix.browser }}"
+        run: ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install ${{ matrix.browser }}"
 
       - name: Run cookie consent test
         run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
