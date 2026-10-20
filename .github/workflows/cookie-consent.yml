@@ -1,0 +1,44 @@
+name: Cookie consent E2E
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cookie-consent:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Compile tests
+        run: ./mvnw -B -DskipTests compile test-compile
+
+      - name: Install Playwright browsers
+        run: ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps ${{ matrix.browser }}"
+
+      - name: Run cookie consent test
+        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+        env:
+          BROWSER: ${{ matrix.browser }}
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.browser }}
+          path: |
+            target/surefire-reports/
+            target/screenshots/
