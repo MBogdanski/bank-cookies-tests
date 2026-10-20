@@ -7,7 +7,7 @@ on:
 jobs:
   cookie-consent:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -15,8 +15,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run tests in Docker
-        run: bash ./scripts/docker-test.sh ${{ matrix.browser }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Install Playwright (${{ matrix.browser }})
+        run: |
+          set -euxo pipefail
+          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
+            -Dexec.args="install --with-deps ${{ matrix.browser }}"
+
+      - name: Run tests
+        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
 
       - name: Upload reports on failure
         if: failure()
