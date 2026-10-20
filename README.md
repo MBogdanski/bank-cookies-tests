@@ -50,5 +50,6 @@ Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-conse
 - **Runner:** `ubuntu-latest`
 - **JDK:** 21 (Temurin), Maven dependency cache enabled
 - **Matrix:** `chromium`, `firefox`, `webkit` in parallel (`fail-fast: false`)
-- **Steps:** checkout → compile test sources → `sudo … install-deps` (Ubuntu system libraries) → Playwright `install <browser>` → `./mvnw -B test -Dbrowser=<matrix browser>`
+- **Steps:** checkout → compile test sources → Playwright `install-deps <browser>` (OS libraries; CLI uses `sudo` for `apt` on Ubuntu) → `install <browser>` → `./mvnw -B test -Dbrowser=<matrix browser>`
+- **Timeouts / cache:** job timeout 25 minutes; Maven cache via `setup-java`; Playwright browser cache under `~/.cache/ms-playwright`
 - **On failure:** uploads Surefire reports (`target/surefire-reports/`) and screenshots (`target/screenshots/`) as artifacts named `reports-<browser>`

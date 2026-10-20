@@ -7,6 +7,7 @@ on:
 jobs:
   cookie-consent:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -20,6 +21,14 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ matrix.browser }}-${{ hashFiles('pom.xml') }}
+          restore-keys: |
+            ms-playwright-${{ matrix.browser }}-
+
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
 
@@ -27,13 +36,22 @@ jobs:
         run: ./mvnw -B -DskipTests compile test-compile
 
       - name: Install Playwright OS dependencies
-        run: sudo ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
+        run: |
+          set -euxo pipefail
+          echo "Playwright install-deps (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps ${{ matrix.browser }}"
 
       - name: Install Playwright browsers
-        run: ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install ${{ matrix.browser }}"
+        run: |
+          set -euxo pipefail
+          echo "Playwright install (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install ${{ matrix.browser }}"
 
       - name: Run cookie consent test
-        run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
+        run: |
+          set -euxo pipefail
+          echo "Surefire (${{ matrix.browser }}) — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          ./mvnw -B test -Dbrowser=${{ matrix.browser }}
         env:
           BROWSER: ${{ matrix.browser }}
 
