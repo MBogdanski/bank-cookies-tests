@@ -7,7 +7,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.options.AriaRole;
-import com.microsoft.playwright.options.WaitUntil;
+import com.microsoft.playwright.options.WaitUntilState;
 import com.microsoft.playwright.PlaywrightException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -79,14 +79,14 @@ public abstract class BrowserFixture {
 
     protected void openIngHome() {
         page.navigate("https://www.ing.pl/",
-                new Page.NavigateOptions().setWaitUntil(WaitUntil.DOMCONTENTLOADED));
+                new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
         assertIngHomeReachable();
     }
 
     private void assertIngHomeReachable() {
         String url = page.url();
-        String body = page.content();
-        if (url.contains("Incapsula") || body.contains("_Incapsula") || body.contains("incident_id=")) {
+        // Normal ing.pl HTML always embeds /_Incapsula_Resource as a script — only the main frame URL matters.
+        if (url.contains("_Incapsula_Resource")) {
             throw new AssertionError("""
                     ing.pl blocked this client (Imperva/Incapsula). \
                     The cookie banner will not load — common for GitHub Actions datacenter IPs. \
@@ -100,7 +100,10 @@ public abstract class BrowserFixture {
         try {
             bannerAction.first().waitFor(new Locator.WaitForOptions().setTimeout(isCi() ? 15_000 : 30_000));
         } catch (PlaywrightException e) {
-            throw new AssertionError("Cookie consent banner did not appear on www.ing.pl", e);
+            String hint = isCi()
+                    ? " On CI this often means Imperva blocked the runner IP (check for _Incapsula_Resource in pw:api navigate logs)."
+                    : "";
+            throw new AssertionError("Cookie consent banner did not appear on www.ing.pl." + hint, e);
         }
     }
 
