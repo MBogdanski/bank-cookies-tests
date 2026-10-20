@@ -3,9 +3,12 @@ package pl.ing.cookies.fixtures;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.LoadState;
+import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.WaitUntil;
+import com.microsoft.playwright.PlaywrightException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -71,13 +74,33 @@ public abstract class BrowserFixture {
         }
         page = context.newPage();
         page.setDefaultNavigationTimeout(45_000);
-        page.setDefaultTimeout(30_000);
+        page.setDefaultTimeout(isCi() ? 20_000 : 30_000);
     }
 
     protected void openIngHome() {
-        page.navigate("https://www.ing.pl/");
-        if (isCi()) {
-            page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+        page.navigate("https://www.ing.pl/",
+                new Page.NavigateOptions().setWaitUntil(WaitUntil.DOMCONTENTLOADED));
+        assertIngHomeReachable();
+    }
+
+    private void assertIngHomeReachable() {
+        String url = page.url();
+        String body = page.content();
+        if (url.contains("Incapsula") || body.contains("_Incapsula") || body.contains("incident_id=")) {
+            throw new AssertionError("""
+                    ing.pl blocked this client (Imperva/Incapsula). \
+                    The cookie banner will not load — common for GitHub Actions datacenter IPs. \
+                    Run tests locally or from a non-datacenter network.""");
+        }
+
+        Locator bannerAction = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Odrzuć wszystkie"))
+                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Dostosuj")))
+                .or(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Zaakceptuj wszystkie")));
+
+        try {
+            bannerAction.first().waitFor(new Locator.WaitForOptions().setTimeout(isCi() ? 15_000 : 30_000));
+        } catch (PlaywrightException e) {
+            throw new AssertionError("Cookie consent banner did not appear on www.ing.pl", e);
         }
     }
 
