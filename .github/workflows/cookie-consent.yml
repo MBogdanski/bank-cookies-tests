@@ -57,8 +57,10 @@ jobs:
           mvn -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
             -Dexec.args="install --with-deps"
 
-      - name: Run tests
+      - name: Run Playwright Tests
         run: mvn -B test -Dbrowser=${{ matrix.browser }}
+        env:
+          DEBUG: pw:api,pw:browser
 
       - name: Upload reports on failure
         if: failure()

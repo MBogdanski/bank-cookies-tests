@@ -48,6 +48,7 @@
                 <version>3.5.2</version>
                 <configuration>
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
+                    <useUnbufferedStream>true</useUnbufferedStream>
                     <systemPropertyVariables>
                         <browser>${browser}</browser>
                         <headed>${headed}</headed>
