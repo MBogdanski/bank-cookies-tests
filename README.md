@@ -1,71 +1,54 @@
 # bank-cookies-tests
 
-Testy E2E zgód cookies na [ing.pl](https://www.ing.pl) (Java 21, JUnit 5, Playwright) — cztery warianty wartości `cookiePolicyGDPR` (1–4).
+## Requirements
 
-Repozytorium: [github.com/MBogdanski/bank-cookies-tests](https://github.com/MBogdanski/bank-cookies-tests)
+- JDK 21
+- Maven Wrapper (`./mvnw`) — a global Maven install is optional
 
-## Wymagania
+## Playwright browsers
 
-- **JDK 21** (LTS)
-- Maven globalny jest **opcjonalny** — w projekcie jest Maven Wrapper (`./mvnw`)
-
-## Instalacja przeglądarek Playwright
-
-Przed pierwszym uruchomieniem testów lokalnie:
+Run once before the first local test run:
 
 ```bash
 ./mvnw exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install --with-deps"
 ```
 
-Na macOS/Linux wystarczy często samo `install chromium` (lub wybrana przeglądarka).
+On macOS/Linux, installing a single browser is often enough, e.g. `install chromium`.
 
-## Uruchomienie testów
+## Running tests
 
-Domyślnie **Chromium**, tryb headless:
+Default: Chromium, headless.
 
 ```bash
 ./mvnw test
 ```
 
-Inna przeglądarka:
+Other browsers:
 
 ```bash
 ./mvnw test -Dbrowser=firefox
 ./mvnw test -Dbrowser=webkit
 ```
 
-Podgląd okna przeglądarki (debug):
+Headed mode (debug):
 
 ```bash
 ./mvnw test -Dheaded=true
 ```
 
-## Scenariusze
+Run a single test class or method:
 
-Każdy test startuje w czystym kontekście na `https://www.ing.pl/` (poza testem nadpisania cookies) i po akcji w banerze sprawdza `cookiePolicyGDPR` oraz `cookiePolicyGDPR__details`. Cookies techniczne są zawsze aktywne w banerze.
+```bash
+./mvnw test -Dtest=CookieConsentTest
+./mvnw test -Dtest=CookieConsentTest#rejectAllCookiesShouldSetPolicyValueTo1
+```
 
-| Test | Akcja w banerze | Oczekiwane `cookiePolicyGDPR` |
-|------|-----------------|-------------------------------|
-| Odrzuć wszystkie | **Odrzuć wszystkie** | `1` |
-| Tylko marketingowe | **Dostosuj** → marketing ON → **Zaakceptuj zaznaczone** | `2` |
-| Tylko analityczne | **Dostosuj** → analityczne ON, marketing OFF → **Zaakceptuj zaznaczone** | `3` |
-| Wszystkie | **Zaakceptuj wszystkie** | `4` |
-| Obejście UI (techniczne) | **Dostosuj** → manipulacja DOM switcha technicznego → **Zaakceptuj zaznaczone** | `1` |
-| Nadpisanie cookies | `addCookies` z `cookiePolicyGDPR=4` → **Odrzuć wszystkie** | `1` na `.ing.pl` |
-| Trwałość po reload | **Odrzuć wszystkie** → `page.reload()` | te same wartości `cookiePolicyGDPR` i `cookiePolicyGDPR__details` |
+## GitHub Actions
 
-Implementacja: [`CookieConsentModal`](src/test/java/pl/ing/cookies/pages/CookieConsentModal.java), [`CookieConsentTest`](src/test/java/pl/ing/cookies/CookieConsentTest.java).
+Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) runs on every **push** and **pull request**.
 
-## CI (GitHub Actions)
-
-Workflow [`.github/workflows/cookie-consent.yml`](.github/workflows/cookie-consent.yml) uruchamia ten sam test równolegle na **Chromium, Firefox i WebKit** (`strategy.matrix`, `fail-fast: false`).
-
-Wyniki: [Actions](https://github.com/MBogdanski/bank-cookies-tests/actions)
-
-Przy błędzie job uploaduje raporty Surefire i zrzuty ekranu z `target/screenshots/`.
-
-## Powtarzalność
-
-- Nowy `BrowserContext` na każdy test (locale `pl-PL`, viewport 1280×720).
-- Headless w CI; lokalnie domyślnie headless.
-- Oczekiwania na elementy UI zamiast stałych opóźnień (poza krótkim pollingiem na cookies GA po reload).
+- **Runner:** `ubuntu-latest`
+- **JDK:** 21 (Temurin), Maven dependency cache enabled
+- **Matrix:** `chromium`, `firefox`, `webkit` in parallel (`fail-fast: false`)
+- **Steps:** checkout → compile test sources → install the matrix browser with Playwright (`install --with-deps`) → `./mvnw -B test -Dbrowser=<matrix browser>`
+- **On failure:** uploads Surefire reports (`target/surefire-reports/`) and screenshots (`target/screenshots/`) as artifacts named `reports-<browser>`
