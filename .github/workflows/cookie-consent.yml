@@ -54,13 +54,11 @@ jobs:
       - name: Build
         run: ./mvnw -B install -DskipTests --no-transfer-progress
 
-      - name: Install Playwright (${{ matrix.browser }})
+      - name: Ensure browsers are installed
         run: |
           set -euxo pipefail
           ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
-            -Dexec.args="install-deps ${{ matrix.browser }}"
-          ./mvnw -B exec:java -e -Dexec.mainClass=com.microsoft.playwright.CLI \
-            -Dexec.args="install ${{ matrix.browser }}"
+            -Dexec.args="install --with-deps"
 
       - name: Run tests
         run: ./mvnw -B test -Dbrowser=${{ matrix.browser }}
